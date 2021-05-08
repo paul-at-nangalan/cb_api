@@ -3,8 +3,7 @@ package event
 import (
 	"cb_api/cloudbet"
 	"cb_api/errorhandlers"
-	"github.com/golang/protobuf/proto"
-	"io/ioutil"
+	"cb_api/processors"
 	"net/http"
 	"path"
 )
@@ -14,25 +13,24 @@ const(
 	API_KEY_HEADER = "X-API-Key"
 )
 
-type StatWriter interface {
-	Write(event *cloudbet.Event)
-	AlertEventRemoved(event *cloudbet.Event)
+type EventDataHandler interface {
+	Put(event *cloudbet.Event)
 }
 
 type Processor struct{
-	writer StatWriter
+	processors.Retriever
+	writer     EventDataHandler
 	fetchqueue chan string
-	client *http.Client
-	apikey string
 }
 
 ///Fetch queue is a queue of event keys to fetch data for
-func NewProcessor(statwriter StatWriter, apikey string, fetchqueue chan string)*Processor{
-	return &Processor{
+func NewProcessor(statwriter EventDataHandler, apikey string, fetchqueue chan string)*Processor{
+	proc := &Processor{
 		writer: statwriter,
 		fetchqueue: fetchqueue,
-		client: http.DefaultClient,
 	}
+	proc.Setup(apikey, http.DefaultClient)
+	return proc
 }
 
 ///Should be run in a seperate thread
@@ -51,16 +49,9 @@ func (p *Processor)processEvent(eventkey string){
 	req, err := http.NewRequest(http.MethodGet, fullurl, nil)
 	errorhandlers.PanicOnError(err)
 
-	req.Header.Set(API_KEY_HEADER, p.apikey)
-	req.Header.Set("Accept-Ancoding", "application/x-protobuf")
-
-	resp, err := p.client.Do(req)
-	errorhandlers.PanicOnError(err)
-
-	data, err := ioutil.ReadAll(resp.Body)
-	errorhandlers.PanicOnError(err)
 	event := cloudbet.Event{}
-	err = proto.Unmarshal(data, &event)
-	errorhandlers.PanicOnError(err)
-
+	p.GetData(req, &event)
+	///Let the event handle decide whether it needs to log this
+	// and check for alerts
+	p.writer.Put(&event)
 }
