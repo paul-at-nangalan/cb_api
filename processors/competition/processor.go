@@ -7,7 +7,9 @@ import (
 	"cb_api/processors"
 	"cb_api/processors/event"
 	"net/http"
+	"os"
 	"path"
+	"time"
 )
 
 const(
@@ -36,12 +38,17 @@ func NewProcessor(numeventprocessors int, apikey string)*Processor{
 	}
 	proc.Setup(apikey, http.DefaultClient)
 
-	datahandler := eventdatahandler.NewDataHandler()
+	outfile := os.ExpandEnv("STATFILE")
+	interval := os.ExpandEnv("STATINTERVAL")
+	dur, err := time.ParseDuration(interval)
+	errorhandlers.PanicOnError(err)
+	datahandler := eventdatahandler.NewDataHandler(outfile, dur)
 
 	//// setup event processors
 	for i := 0; i < numeventprocessors; i++{
 		eventproc := event.NewProcessor(datahandler, apikey)
 		proc.eventprocs[i] = eventproc
+		go eventproc.Run()
 	}
 	return proc
 }
