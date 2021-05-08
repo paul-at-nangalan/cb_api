@@ -24,13 +24,17 @@ type Processor struct{
 }
 
 ///Fetch queue is a queue of event keys to fetch data for
-func NewProcessor(statwriter EventDataHandler, apikey string, fetchqueue chan string)*Processor{
+func NewProcessor(statwriter EventDataHandler, apikey string)*Processor{
 	proc := &Processor{
 		writer: statwriter,
-		fetchqueue: fetchqueue,
+		fetchqueue: make(chan string, 10000),
 	}
 	proc.Setup(apikey, http.DefaultClient)
 	return proc
+}
+
+func (p *Processor)Queue(key string){
+	p.fetchqueue <- key
 }
 
 ///Should be run in a seperate thread

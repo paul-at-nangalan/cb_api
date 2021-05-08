@@ -21,10 +21,18 @@ func (p *Retriever)Setup(apikey string, client *http.Client){
 	p.apikey = apikey
 }
 
-func (p *Retriever)GetData(req *http.Request, out proto.Message){
+func (p *Retriever)GetClient()*http.Client{
+	return p.client
+}
 
+func (p *Retriever)SetHeaders(req *http.Request){
 	req.Header.Set(API_KEY_HEADER, p.apikey)
 	req.Header.Set("Accept-Encoding", "application/x-protobuf")
+}
+
+func (p *Retriever)GetData(req *http.Request, out proto.Message){
+
+	p.SetHeaders(req)
 
 	resp, err := p.client.Do(req)
 	errorhandlers.PanicOnError(err)
