@@ -12,10 +12,12 @@ import (
 type EventHolder struct{
 	ev cloudbet.Event
 	lastpubtime time.Time
+	lastreporttime time.Time
 }
 
 type DataHandler struct{
-	events map[string]*EventHolder
+	events map[string]*EventHolder ///if num events became excessively large, we'd need to fragment this
+									/// across services
 	csvwriter *csv.Writer
 	logintrvl time.Duration
 	writelock sync.Locker
@@ -31,9 +33,9 @@ func NewDataHandler(outputfile string, logintrvl time.Duration)*DataHandler{
 	}
 }
 
-func (p *DataHandler)writeEventData(event *cloudbet.Event){
+func (p *DataHandler)writeEventData(event *cloudbet.Event, logtype string){
 	record := []string{
-		event.Name, event.Key, event.CutoffTime, event.Status.String(),
+		logtype, event.Name, event.Key, event.CutoffTime, event.Status.String(),
 	}
 	p.writelock.Lock()
 	defer p.writelock.Unlock()
@@ -45,10 +47,24 @@ func (p *DataHandler) Put(event *cloudbet.Event) {
 	ev, ok := p.events[event.Key]
 	if ok {
 		if ev.lastpubtime.After(time.Now().Add(p.logintrvl)){
-			p.writeEventData(event)
+			p.writeEventData(event, "normal")
+			ev.lastreporttime = time.Now()
 		}
 	}else{
-		p.writeEventData(event)
+		p.events[event.Key] = &EventHolder{
+			ev: *event,
+			lastreporttime: time.Now(),
+			lastpubtime: time.Now(),
+		}
+		p.writeEventData(event, "normal")
+	}
+}
+
+func (p *DataHandler)CheckMissing(){
+	for _, ev := range p.events{
+		if ev.lastreporttime.Add(time.Second).Before(time.Now()){
+			p.writeEventData(&ev.ev, "alert")
+		}
 	}
 }
 
