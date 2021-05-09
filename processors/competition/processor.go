@@ -3,11 +3,9 @@ package competition
 import (
 	"cb_api/cloudbet"
 	"cb_api/errorhandlers"
-	"cb_api/eventdatahandler"
 	"cb_api/processors"
 	"cb_api/processors/event"
 	"net/http"
-	"os"
 	"path"
 	"time"
 )
@@ -107,7 +105,7 @@ func (p *Processor)Process(){
 			for _, comp := range cat.Competitions{
 				events := p.GetEventsByCompetition(comp.Key)
 				fetcher := 0 ///does not give perfect distribution, but should be ok
-				for ev := range events.Events{
+				for _, ev := range events.Events{
 					p.eventprocs[fetcher % len(p.eventprocs)].Queue(ev.Key)
 					fetcher++
 				}
