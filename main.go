@@ -25,15 +25,15 @@ func getDurVar(name string)time.Duration{
 func main(){
 	defer errorhandlers.PanicHandler()
 
-	outfile := os.ExpandEnv("STATFILE")
+	outfile := os.ExpandEnv("$STATFILE")
 	///How often to log information
-	interval := os.ExpandEnv("STATLOGINTERVAL")
-	apikey := os.ExpandEnv("APIKEY")
-	numeventprocs := getIntVar("NUM_EVENTPROCESSORS")
+	interval := os.ExpandEnv("$STATLOGINTERVAL")
+	apikey := os.ExpandEnv("$APIKEY")
+	numeventprocs := getIntVar("$NUM_EVENTPROCESSORS")
 	////How often to collect information
-	statintrvl := getDurVar("STATSINTERVAL")
+	statintrvl := getDurVar("$STATSINTERVAL")
 	////How often to check for missing events
-	checkintrvl := getDurVar("CHECKINTERVAL")/// check for events that have gone missing
+	checkintrvl := getDurVar("$CHECKINTERVAL")/// check for events that have gone missing
 
 	dur, err := time.ParseDuration(interval)
 	errorhandlers.PanicOnError(err)
