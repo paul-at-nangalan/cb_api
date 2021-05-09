@@ -11,8 +11,8 @@ import (
 )
 
 const(
-	GET_SPORTS = "/v2/odds/sports"
-	GET_EVENTS_BYCOMP = "/v2/odds/competitions"
+	GET_SPORTS = "https://sports-api.cloudbet.com/pub/v2/odds/sports"
+	GET_EVENTS_BYCOMP = "https://sports-api.cloudbet.com/pub/v2/odds/competitions"
 )
 
 /*
@@ -23,6 +23,9 @@ and also the Content-Type header to request for protobuf data;
 Too much dependancy in the API, e.g. I just want to get a list of all events (paged) with
 sport, category etc ...
 I don't want to have to get sports , then competitions, then iterate and then get events
+
+The documentation doesn't seem to mention the dns, I ran the example with inspect to see
+the server address
  */
 
 type Processor struct {

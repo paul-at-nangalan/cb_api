@@ -9,7 +9,7 @@ import (
 )
 
 const(
-	GET_EVENT = "/v2/odds/events/"
+	GET_EVENT = "https://sports-api.cloudbet.com/pub/v2/odds/events/"
 )
 
 
