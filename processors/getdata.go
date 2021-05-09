@@ -2,6 +2,7 @@ package processors
 
 import (
 	"cb_api/errorhandlers"
+	"fmt"
 	"google.golang.org/protobuf/proto"
 	"io/ioutil"
 	"net/http"
@@ -39,6 +40,7 @@ func (p *Retriever)GetData(req *http.Request, out proto.Message){
 
 	data, err := ioutil.ReadAll(resp.Body)
 	errorhandlers.PanicOnError(err)
+	fmt.Println("RAW DATA ", data)
 	err = proto.Unmarshal(data, out)
 	errorhandlers.PanicOnError(err)
 }
