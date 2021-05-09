@@ -26,10 +26,13 @@ func main(){
 	defer errorhandlers.PanicHandler()
 
 	outfile := os.ExpandEnv("STATFILE")
-	interval := os.ExpandEnv("STATINTERVAL")
+	///How often to log information
+	interval := os.ExpandEnv("STATLOGINTERVAL")
 	apikey := os.ExpandEnv("APIKEY")
 	numeventprocs := getIntVar("NUM_EVENTPROCESSORS")
+	////How often to collect information
 	statintrvl := getDurVar("STATSINTERVAL")
+	////How often to check for missing events
 	checkintrvl := getDurVar("CHECKINTERVAL")/// check for events that have gone missing
 
 	dur, err := time.ParseDuration(interval)

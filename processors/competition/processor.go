@@ -7,6 +7,7 @@ import (
 	"cb_api/processors/event"
 	"net/http"
 	"path"
+	"strings"
 	"time"
 )
 
@@ -109,6 +110,17 @@ func (p *Processor)Process(){
 				events := p.GetEventsByCompetition(comp.Key)
 				fetcher := 0 ///does not give perfect distribution, but should be ok
 				for _, ev := range events.Events{
+					isvalid := true
+					for name, _ := range ev.Markets{
+						///not sure this is correct ...
+						if strings.Contains(name, ".outright"){
+							isvalid = false
+							break
+						}
+					}
+					if !isvalid{
+						continue
+					}
 					p.eventprocs[fetcher % len(p.eventprocs)].Queue(ev.Key)
 					fetcher++
 				}
