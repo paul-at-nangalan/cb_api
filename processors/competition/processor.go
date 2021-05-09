@@ -5,15 +5,20 @@ import (
 	"cb_api/errorhandlers"
 	"cb_api/processors"
 	"cb_api/processors/event"
+	"fmt"
 	"net/http"
+	url2 "net/url"
 	"path"
 	"strings"
+	"sync"
 	"time"
 )
 
 const(
-	GET_SPORTS = "https://sports-api.cloudbet.com/pub/v2/odds/sports"
-	GET_EVENTS_BYCOMP = "https://sports-api.cloudbet.com/pub/v2/odds/competitions"
+	SCHEME = "https"
+	SERVER = "sports-api.cloudbet.com"
+	GET_SPORTS = "/pub/v2/odds/sports"
+	GET_EVENTS_BYCOMP = "/pub/v2/odds/competitions"
 )
 
 /*
@@ -35,6 +40,7 @@ type Processor struct {
 	processors.Retriever
 	eventprocs []*event.Processor
 	datahandler processors.EventDataHandler
+	waitgroup *sync.WaitGroup
 }
 
 func NewProcessor(numeventprocessors int, apikey string, datahandler processors.EventDataHandler)*Processor{
@@ -45,31 +51,37 @@ func NewProcessor(numeventprocessors int, apikey string, datahandler processors.
 
 	proc.datahandler = datahandler
 
+	waitgroup := &sync.WaitGroup{}
+	proc.waitgroup = waitgroup
 	//// setup event processors
 	for i := 0; i < numeventprocessors; i++{
-		eventproc := event.NewProcessor(datahandler, apikey)
+		eventproc := event.NewProcessor(datahandler, apikey, proc.waitgroup)
 		proc.eventprocs[i] = eventproc
 		go eventproc.Run()
 	}
 	return proc
 }
 
-func (p *Processor)Run(procintrvl time.Duration, checkintrvl time.Duration){
+func (p *Processor)Run(procintrvl time.Duration){
 	procticker := time.NewTicker(procintrvl)
-	checkticker := time.NewTicker(checkintrvl)
 	for{
 		select {
 		case <-procticker.C:
 			p.Process()
-		case <-checkticker.C:
+			fmt.Println("Waiting for get events to finish")
+			p.waitgroup.Wait()
+			fmt.Println("Done")
 			p.datahandler.Check()
 		}
 	}
 }
 
 func (p *Processor)GetSports()*cloudbet.Sports{
-	fullurl := GET_SPORTS
-	req, err := http.NewRequest(http.MethodGet, fullurl, nil)
+	url := url2.URL{}
+	url.Scheme = SCHEME
+	url.Host = SERVER
+	url.Path = GET_SPORTS
+	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 	errorhandlers.PanicOnError(err)
 
 	sports := &cloudbet.Sports{}
@@ -80,8 +92,11 @@ func (p *Processor)GetSports()*cloudbet.Sports{
 
 
 func (p *Processor)GetSportByKey(key string)*cloudbet.SportWithCategory{
-	fullurl := path.Join(GET_SPORTS, key)
-	req, err := http.NewRequest(http.MethodGet, fullurl, nil)
+	url := url2.URL{}
+	url.Scheme = SCHEME
+	url.Host = SERVER
+	url.Path = path.Join(GET_SPORTS, key)
+	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 	errorhandlers.PanicOnError(err)
 
 	sport := &cloudbet.SportWithCategory{}
@@ -91,8 +106,11 @@ func (p *Processor)GetSportByKey(key string)*cloudbet.SportWithCategory{
 }
 
 func (p *Processor)GetEventsByCompetition(key string)*cloudbet.Competition{
-	fullurl := path.Join(GET_EVENTS_BYCOMP, key)
-	req, err := http.NewRequest(http.MethodGet, fullurl, nil)
+	url := url2.URL{}
+	url.Scheme = SCHEME
+	url.Host = SERVER
+	url.Path = path.Join(GET_EVENTS_BYCOMP, key)
+	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 	errorhandlers.PanicOnError(err)
 
 	events := &cloudbet.Competition{}

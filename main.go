@@ -27,18 +27,16 @@ func main(){
 
 	outfile := os.ExpandEnv("$STATFILE")
 	///How often to log information
-	interval := os.ExpandEnv("$STATLOGINTERVAL")
+	interval := getDurVar("$STATLOGINTERVAL")
 	apikey := os.ExpandEnv("$APIKEY")
 	numeventprocs := getIntVar("$NUM_EVENTPROCESSORS")
 	////How often to collect information
 	statintrvl := getDurVar("$STATSINTERVAL")
 	////How often to check for missing events
-	checkintrvl := getDurVar("$CHECKINTERVAL")/// check for events that have gone missing
+	alertintrvl := getDurVar("$ALERTINTERVAL")/// check for events that have gone missing
 
-	dur, err := time.ParseDuration(interval)
-	errorhandlers.PanicOnError(err)
-	datahandler := eventdatahandler.NewDataHandler(outfile, dur)
+	datahandler := eventdatahandler.NewDataHandler(outfile, interval, alertintrvl)
 
 	proc := competition.NewProcessor(int(numeventprocs), apikey, datahandler)
-	proc.Run(statintrvl, checkintrvl) /// run this on the main thread
+	proc.Run(statintrvl) /// run this on the main thread
 }
