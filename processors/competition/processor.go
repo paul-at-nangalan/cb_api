@@ -27,6 +27,8 @@ I don't want to have to get sports , then competitions, then iterate and then ge
 
 The documentation doesn't seem to mention the dns, I ran the example with inspect to see
 the server address
+
+The documentation doesn't seem to mention the header "accept": "application/x-protobuf"
  */
 
 type Processor struct {

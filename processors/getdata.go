@@ -28,7 +28,7 @@ func (p *Retriever)GetClient()*http.Client{
 
 func (p *Retriever)SetHeaders(req *http.Request){
 	req.Header.Set(API_KEY_HEADER, p.apikey)
-	req.Header.Set("Accept-Encoding", "application/x-protobuf")
+	req.Header.Set("accept", "application/x-protobuf")
 }
 
 func (p *Retriever)GetData(req *http.Request, out proto.Message){
