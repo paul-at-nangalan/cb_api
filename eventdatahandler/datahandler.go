@@ -21,6 +21,7 @@ type DataHandler struct{
 	csvwriter *csv.Writer
 	logintrvl time.Duration
 	writelock sync.Locker
+	f *os.File
 }
 
 func NewDataHandler(outputfile string, logintrvl time.Duration)*DataHandler{
@@ -30,7 +31,13 @@ func NewDataHandler(outputfile string, logintrvl time.Duration)*DataHandler{
 	return &DataHandler{
 		events: make(map[string]*EventHolder),
 		csvwriter: csvwriter,
+		logintrvl: logintrvl,
+		f: f,
 	}
+}
+
+func (p *DataHandler)Close(){
+	p.f.Close()
 }
 
 func (p *DataHandler)writeEventData(event *cloudbet.Event, logtype string){
@@ -60,7 +67,7 @@ func (p *DataHandler) Put(event *cloudbet.Event) {
 	}
 }
 
-func (p *DataHandler)CheckMissing(){
+func (p *DataHandler)Check(){
 	for _, ev := range p.events{
 		if ev.lastreporttime.Add(time.Second).Before(time.Now()){
 			p.writeEventData(&ev.ev, "alert")

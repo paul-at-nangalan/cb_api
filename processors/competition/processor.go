@@ -30,19 +30,16 @@ I don't want to have to get sports , then competitions, then iterate and then ge
 type Processor struct {
 	processors.Retriever
 	eventprocs []*event.Processor
+	datahandler processors.EventDataHandler
 }
 
-func NewProcessor(numeventprocessors int, apikey string)*Processor{
+func NewProcessor(numeventprocessors int, apikey string, datahandler processors.EventDataHandler)*Processor{
 	proc := &Processor{
 		eventprocs: make([]*event.Processor, numeventprocessors),
 	}
 	proc.Setup(apikey, http.DefaultClient)
 
-	outfile := os.ExpandEnv("STATFILE")
-	interval := os.ExpandEnv("STATINTERVAL")
-	dur, err := time.ParseDuration(interval)
-	errorhandlers.PanicOnError(err)
-	datahandler := eventdatahandler.NewDataHandler(outfile, dur)
+	proc.datahandler = datahandler
 
 	//// setup event processors
 	for i := 0; i < numeventprocessors; i++{
@@ -51,6 +48,19 @@ func NewProcessor(numeventprocessors int, apikey string)*Processor{
 		go eventproc.Run()
 	}
 	return proc
+}
+
+func (p *Processor)Run(procintrvl time.Duration, checkintrvl time.Duration){
+	procticker := time.NewTicker(procintrvl)
+	checkticker := time.NewTicker(checkintrvl)
+	for{
+		select {
+		case <-procticker.C:
+			p.Process()
+		case <-checkticker.C:
+			p.datahandler.Check()
+		}
+	}
 }
 
 func (p *Processor)GetSports()*cloudbet.Sports{
@@ -105,3 +115,4 @@ func (p *Processor)Process(){
 		}
 	}
 }
+

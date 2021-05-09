@@ -10,21 +10,17 @@ import (
 
 const(
 	GET_EVENT = "/v2/odds/events/"
-	API_KEY_HEADER = "X-API-Key"
 )
 
-type EventDataHandler interface {
-	Put(event *cloudbet.Event)
-}
 
 type Processor struct{
 	processors.Retriever
-	writer     EventDataHandler
+	writer     processors.EventDataHandler
 	fetchqueue chan string
 }
 
 ///Fetch queue is a queue of event keys to fetch data for
-func NewProcessor(statwriter EventDataHandler, apikey string)*Processor{
+func NewProcessor(statwriter processors.EventDataHandler, apikey string)*Processor{
 	proc := &Processor{
 		writer: statwriter,
 		fetchqueue: make(chan string, 10000),
@@ -44,11 +40,12 @@ func (p *Processor)Run(){
 		case eventkey := <-p.fetchqueue:
 			p.processEvent(eventkey)
 		}
-
 	}
 }
 
 func (p *Processor)processEvent(eventkey string){
+	defer errorhandlers.PanicHandler()
+
 	fullurl := path.Join(GET_EVENT, eventkey)
 	req, err := http.NewRequest(http.MethodGet, fullurl, nil)
 	errorhandlers.PanicOnError(err)
