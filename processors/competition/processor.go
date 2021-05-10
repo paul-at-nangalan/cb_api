@@ -54,6 +54,8 @@ func NewProcessor(numeventprocessors int, apikey string, datahandler processors.
 	waitgroup := &sync.WaitGroup{}
 	proc.waitgroup = waitgroup
 	//// setup event processors
+	///  hmmmm ... maybe I went over the top on the threading model, could probably have handled this
+	///  with sharding and multiple services
 	for i := 0; i < numeventprocessors; i++{
 		eventproc := event.NewProcessor(datahandler, apikey, proc.waitgroup)
 		proc.eventprocs[i] = eventproc
